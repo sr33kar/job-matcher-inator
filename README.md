@@ -35,10 +35,9 @@ Export Results:
 
 ## Setup Instructions
 Prerequisites
-- Python 3.8 or higher.
+- Python <4.0, >=3.10
 
 Required Libraries:
-This application requires: Python <4.0, >=3.10
 
 - Install the required libraries using the following command:
 
