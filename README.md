@@ -20,7 +20,7 @@ Job Matching:
 Filtering:
 - Excludes jobs containing specific keywords (e.g., "citizenship", "visa", "sponsorship").
 - Removes jobs with invalid locations (e.g., locations without a comma).
-- I assumes all of the locations on US has a comma, you can remove/update location filtering to your need.
+- I assume all of the locations on US has a comma, you can remove/update location filtering to your need.
 
 Interactive Interface:
 - Built using Streamlit, providing a user-friendly web interface.
