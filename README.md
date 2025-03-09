@@ -64,7 +64,7 @@ Prepare a CSV file (jobs.csv) containing job data with the following columns:
 ## Running the Application
 Clone the Repository:
 ```bash
-[git clone https://github.com/your-username/job-matching-system.git](https://github.com/sr33kar/job-matcher-inator.git)
+git clone https://github.com/your-username/job-matching-system.git
 cd job-matching-system
 ```
 
