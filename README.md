@@ -38,10 +38,12 @@ Prerequisites
 - Python 3.8 or higher.
 
 Required Libraries:
+This application requires: Python <4.0, >=3.10
+
 - Install the required libraries using the following command:
 
 ```bash
-pip install pandas scikit-learn nltk streamlit PyPDF2 transformers torch python-jobspy
+pip install -r requirements.txt
 ```
 
 NLTK Data:
