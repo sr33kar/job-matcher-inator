@@ -13,4 +13,4 @@ torch==2.0.1
 PyPDF2==3.0.1
 
 # Job Data Fetching
-python-jobspy==0.1.0  # Requires Python >=3.10, <4.0
+python-jobspy==1.1.78  # Requires Python >=3.10, <4.0
