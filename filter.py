@@ -6,6 +6,7 @@ import re
 import pandas as pd
 import streamlit as st
 import os
+import PyPDF2  # Add PyPDF2 for PDF support
 
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)] 
 # Load pre-trained BERT model and tokenizer
@@ -26,18 +27,34 @@ def extract_experience(text):
     if match:
         return int(match.group(1))
     return 0
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_file):
+    reader = PyPDF2.PdfReader(pdf_file)
+    text = ''
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
 
 # Streamlit App
 def main():
     st.title("Job Matching System")
-    st.write("Upload your resume (Markdown) and find eligible jobs!")
+    st.write("Upload your resume and find eligible jobs!")
 
-    # Upload resume
-    uploaded_file = st.file_uploader("Upload your resume (Markdown)", type="md")
+    # Dropdown for file type selection
+    file_type = st.selectbox("Select resume file type", ["Markdown (MD)", "PDF"])
+
+    # Upload resume based on selected file type
+    if file_type == "Markdown (MD)":
+        uploaded_file = st.file_uploader("Upload your resume (Markdown)", type="md")
+    else:
+        uploaded_file = st.file_uploader("Upload your resume (PDF)", type="pdf")
 
     if uploaded_file:
-        # Read text from the uploaded Markdown file
-        resume_text = uploaded_file.read().decode('utf-8')
+        # Read text from the uploaded file
+        if file_type == "PDF":
+            resume_text = extract_text_from_pdf(uploaded_file)
+        else:
+            resume_text = uploaded_file.read().decode('utf-8')
         st.write("Resume text extracted successfully!")
 
         # Load job data
