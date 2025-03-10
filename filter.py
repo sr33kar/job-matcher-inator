@@ -75,7 +75,7 @@ def main():
         jobs['description'] = jobs['description'].fillna('')
 
         # Remove jobs containing the word "citizenship"
-        filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen']
+        filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen', 'Principal', 'Embedded']
         filter_description = ['citizenship', 'Clearance', 'Secret', 'TS/SCI', 'Citizen']
         filter_companies = ['Dice']
 
