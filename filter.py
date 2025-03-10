@@ -2,13 +2,16 @@ from transformers import BertTokenizer, BertModel
 import torch
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 import re
 import pandas as pd
 import streamlit as st
 import os
 import PyPDF2  # Add PyPDF2 for PDF support
+from rake_nltk import Rake  # For keyword extraction
 
 torch.classes.__path__ = [os.path.join(torch.__path__[0], torch.classes.__file__)] 
+
 # Load pre-trained BERT model and tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
@@ -27,6 +30,7 @@ def extract_experience(text):
     if match:
         return int(match.group(1))
     return 0
+
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
     reader = PyPDF2.PdfReader(pdf_file)
@@ -34,6 +38,12 @@ def extract_text_from_pdf(pdf_file):
     for page in reader.pages:
         text += page.extract_text()
     return text
+
+# Function to extract keywords using RAKE
+def extract_keywords(text):
+    rake = Rake()
+    rake.extract_keywords_from_text(text)
+    return rake.get_ranked_phrases()  # Returns a list of ranked keywords
 
 # Streamlit App
 def main():
@@ -84,48 +94,75 @@ def main():
         st.write(f"Remaining jobs: {len(jobs)}")
         
         # Preprocess resume text
-        resume_embedding = get_bert_embedding(resume_text)
+        resume_keywords = extract_keywords(resume_text)
         resume_experience = extract_experience(resume_text)
 
-        
-        # Cache BERT embeddings for each job
-        if 'job_embeddings' not in st.session_state:
-            st.session_state.job_embeddings = {}
-            progress_bar = st.progress(0)
-            status_text = st.empty()
 
-            for i, (_, job) in enumerate(jobs.iterrows()):
-                job_text = job['title'] + ' ' + job['description']
-                st.session_state.job_embeddings[job['id']] = get_bert_embedding(job_text)
+        # Toggle for similarity method
+        similarity_method = st.radio(
+            "Select similarity method",
+            ["BERT Embeddings + Cosine Similarity", "TF-IDF + Cosine Similarity"],
+            index=1  # Default to BERT Embeddings + Cosine Similarity
+        )
 
-                # Update progress bar
-                progress = int((i + 1) / len(jobs) * 100)
-                progress_bar.progress(progress)
-                status_text.text(f"Computing embeddings for job {i + 1} of {len(jobs)}...")
+        # Compute similarity based on selected method
+        if similarity_method == "BERT Embeddings + Cosine Similarity":
+            # Get BERT embeddings for resume keywords
+            resume_embedding = get_bert_embedding(' '.join(resume_keywords))
 
-            st.write("BERT embeddings computed and cached!")
+            # Cache BERT embeddings for each job's keywords
+            if 'job_embeddings' not in st.session_state:
+                st.session_state.job_embeddings = {}
+                progress_bar = st.progress(0)
+                status_text = st.empty()
 
-        # Compute similarity for each job using cached embeddings
-        similarity_scores = []
-        job_experiences = []
-        for _, job in jobs.iterrows():
-            job_embedding = st.session_state.job_embeddings[job['id']]
-            job_experience = extract_experience(job['description'])
+                for i, (_, job) in enumerate(jobs.iterrows()):
+                    job_text = job['title'] + ' ' + job['description']
+                    job_keywords = extract_keywords(job_text)
+                    st.session_state.job_embeddings[job['id']] = get_bert_embedding(' '.join(job_keywords))
 
-            # BERT similarity
-            bert_similarity = cosine_similarity(resume_embedding, job_embedding)[0][0]
+                    # Update progress bar
+                    progress = int((i + 1) / len(jobs) * 100)
+                    progress_bar.progress(progress)
+                    status_text.text(f"Computing embeddings for job {i + 1} of {len(jobs)}...")
 
-            # Experience match
-            experience_match = 1 if resume_experience >= job_experience else 0
+                st.write("BERT embeddings computed and cached!")
 
-            # Combine scores (70% BERT similarity, 30% experience match)
-            final_score = 0.4 * bert_similarity + 0.6 * experience_match
-            similarity_scores.append(final_score)
-            job_experiences.append(job_experience)
+            # Compute similarity for each job using cached BERT embeddings
+            similarity_scores = []
+            for _, job in jobs.iterrows():
+                job_embedding = st.session_state.job_embeddings[job['id']]
+                job_experience = extract_experience(job['description'])
+
+                # BERT similarity
+                bert_similarity = cosine_similarity(resume_embedding, job_embedding)[0][0]
+
+                # Experience match
+                experience_match = 1 if resume_experience >= job_experience else 0
+
+                # Combine scores (70% BERT similarity, 30% experience match)
+                final_score = 0.8 * bert_similarity + 0.2 * experience_match
+                similarity_scores.append(final_score)
+
+        else:  # TF-IDF + Cosine Similarity
+            # Combine resume keywords and job keywords
+            all_keywords = [' '.join(resume_keywords)] + [
+                ' '.join(extract_keywords(job['title'] + ' ' + job['description'])) for _, job in jobs.iterrows()
+            ]
+
+            # Compute TF-IDF matrix
+            vectorizer = TfidfVectorizer()
+            tfidf_matrix = vectorizer.fit_transform(all_keywords)
+
+            # Compute cosine similarity between resume and job keywords
+            cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+
+            # Add similarity scores to jobs dataframe
+            similarity_scores = cosine_similarities
 
         # Add similarity scores to jobs dataframe
         jobs['similarity_score'] = similarity_scores
-        jobs['job_experience'] = job_experiences
+
         # Filter jobs based on a threshold
         threshold = st.slider("Set similarity threshold", 0.0, 1.0, 0.9)
         eligible_jobs = jobs[jobs['similarity_score'] > threshold]
