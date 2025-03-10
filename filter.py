@@ -65,18 +65,24 @@ def main():
         jobs['description'] = jobs['description'].fillna('')
 
         # Remove jobs containing the word "citizenship"
-        filter_words = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager']
+        filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen']
+        filter_description = ['citizenship', 'Clearance', 'Secret', 'TS/SCI', 'Citizen']
+        filter_companies = ['Dice']
 
         jobs = jobs[~(
-            jobs['title'].str.contains('|'.join(filter_words), case=False, na=False) |
-            jobs['description'].str.contains('citizenship', case=False, na=False)
+            jobs['title'].str.contains('|'.join(filter_title), case=False, na=False) |
+            jobs['description'].str.contains('|'.join(filter_description), case=False, na=False) |
+            jobs['company'].str.contains('|'.join(filter_companies), case=False, na=False)
         )]
 
         # Remove jobs where 'location' does not contain a comma
         jobs = jobs[jobs['location'].str.contains(',', na=False)]
 
-        st.write(f"Filtered out jobs containing filtering words {filter_words}. Remaining jobs: {len(jobs)}")
-
+        st.write(f"Filtered out jobs with titles containing {filter_title}.")
+        st.write(f"Filtered out jobs with description containing {filter_description}.")
+        st.write(f"Filtered out jobs with company name containing {filter_companies}.")
+        st.write(f"Remaining jobs: {len(jobs)}")
+        
         # Preprocess resume text
         resume_embedding = get_bert_embedding(resume_text)
         resume_experience = extract_experience(resume_text)
