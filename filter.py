@@ -45,10 +45,25 @@ def extract_keywords(text):
     rake.extract_keywords_from_text(text)
     return rake.get_ranked_phrases()  # Returns a list of ranked keywords
 
+# Function to save applied jobs to a CSV file
+def save_applied_jobs(applied_jobs):
+    applied_df = pd.DataFrame(applied_jobs)
+    applied_df.to_csv('applied.csv', index=False)
+
+# Function to load applied jobs from a CSV file
+def load_applied_jobs():
+    if os.path.exists('applied.csv'):
+        return pd.read_csv('applied.csv').to_dict('records')
+    return []
+
 # Streamlit App
 def main():
     st.title("Job Matching System")
     st.write("Upload your resume and find eligible jobs!")
+
+    # Initialize session state for applied jobs
+    if 'applied_jobs' not in st.session_state:
+        st.session_state.applied_jobs = load_applied_jobs()
 
     # Dropdown for file type selection
     file_type = st.selectbox("Select resume file type", ["Markdown (MD)", "PDF"])
@@ -96,7 +111,6 @@ def main():
         # Preprocess resume text
         resume_keywords = extract_keywords(resume_text)
         resume_experience = extract_experience(resume_text)
-
 
         # Toggle for similarity method
         similarity_method = st.radio(
@@ -167,19 +181,52 @@ def main():
         threshold = st.slider("Set similarity threshold", 0.0, 1.0, 0.9)
         eligible_jobs = jobs[jobs['similarity_score'] > threshold]
 
-        # Display eligible jobs
-        st.write(f"Found {len(eligible_jobs)} eligible jobs:")
-        st.dataframe(eligible_jobs, column_config={"job_url": st.column_config.LinkColumn()})
+        # Add a checkbox column to the DataFrame
+        eligible_jobs['Apply'] = eligible_jobs['id'].apply(
+            lambda job_id: job_id in [applied_job['id'] for applied_job in st.session_state.applied_jobs]
+        )
 
-        # Save eligible jobs to a CSV file
+        # Reorder columns to place the checkbox next to the job name
+        column_order = ['id', 'Apply', 'title', 'company', 'location', 'job_url', 'similarity_score', "date_posted", 'company_num_employees']
+        eligible_jobs = eligible_jobs[column_order]
+
+        # Display the DataFrame with checkboxes
+        st.write(f"Found {len(eligible_jobs)} eligible jobs:")
+        edited_df = st.data_editor(
+            eligible_jobs,
+            column_config={
+                "Apply": st.column_config.CheckboxColumn("Apply", help="Check to apply to this job"),
+                "job_url": st.column_config.LinkColumn("Job URL"),
+            },
+            hide_index=True,
+        )
+
+        # Update applied jobs based on checkbox changes
         if len(eligible_jobs) > 0:
-            csv = eligible_jobs.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Download Eligible Jobs as CSV",
-                data=csv,
-                file_name="eligible_jobs.csv",
-                mime="text/csv",
-            )
+            applied_job_ids = edited_df[edited_df['Apply']]['id'].tolist()
+            st.session_state.applied_jobs = [
+                {
+                    'id': job['id'],
+                    'title': job['title'],
+                    'company': job['company'],
+                    'job_url': job['job_url'],
+                    'similarity_score': job['similarity_score']
+                }
+                for job in eligible_jobs.to_dict('records') if job['id'] in applied_job_ids
+            ]
+
+        # Save applied jobs to a CSV file
+        if st.button("Save Applied Jobs"):
+            save_applied_jobs(st.session_state.applied_jobs)
+            st.write("Applied jobs saved to `applied.csv`.")
+
+        # Display applied jobs
+        st.write("### Applied Jobs")
+        if st.session_state.applied_jobs:
+            applied_df = pd.DataFrame(st.session_state.applied_jobs)
+            st.dataframe(applied_df, column_config={"job_url": st.column_config.LinkColumn()})
+        else:
+            st.write("No jobs applied yet.")
 
 # Run the Streamlit app
 if __name__ == "__main__":
