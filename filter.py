@@ -187,7 +187,7 @@ def main():
         )
 
         # Reorder columns to place the checkbox next to the job name
-        column_order = ['id', 'Apply', 'title', 'company', 'location', 'job_url', 'similarity_score', "date_posted", 'company_num_employees']
+        column_order = ['id', 'Apply', 'title', 'company', 'location', 'job_url', 'similarity_score', 'date_posted', 'company_num_employees']
         eligible_jobs = eligible_jobs[column_order]
 
         # Display the DataFrame with checkboxes
@@ -210,6 +210,7 @@ def main():
                     'title': job['title'],
                     'company': job['company'],
                     'job_url': job['job_url'],
+                    'date_posted': job['date_posted'],
                     'similarity_score': job['similarity_score']
                 }
                 for job in eligible_jobs.to_dict('records') if job['id'] in applied_job_ids
