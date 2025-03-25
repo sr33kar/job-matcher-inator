@@ -90,9 +90,9 @@ def main():
         jobs['description'] = jobs['description'].fillna('')
 
         # Remove jobs containing the word "citizenship"
-        filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen', 'Principal', 'Embedded']
+        filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen', 'Principal', 'Embedded', 'HVAC', 'Staff']
         filter_description = ['citizenship', 'Clearance', 'Secret', 'TS/SCI', 'Citizen']
-        filter_companies = ['Dice']
+        filter_companies = ['']
 
         jobs = jobs[~(
             jobs['title'].str.contains('|'.join(filter_title), case=False, na=False) |
@@ -154,8 +154,7 @@ def main():
                 # Experience match
                 experience_match = 1 if resume_experience >= job_experience else 0
 
-                # Combine scores (70% BERT similarity, 30% experience match)
-                final_score = 0.8 * bert_similarity + 0.2 * experience_match
+                final_score = bert_similarity * experience_match
                 similarity_scores.append(final_score)
 
         else:  # TF-IDF + Cosine Similarity
