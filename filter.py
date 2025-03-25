@@ -92,7 +92,7 @@ def main():
         # Remove jobs containing the word "citizenship"
         filter_title = ['citizenship', 'senior', 'lead', 'Sr', '.Net', 'Clearance', 'Secret', 'Manager', 'Mgr', 'US Citizen', 'Principal', 'Embedded', 'HVAC', 'Staff']
         filter_description = ['citizenship', 'Clearance', 'Secret', 'TS/SCI', 'Citizen']
-        filter_companies = ['']
+        filter_companies = ['Sreekar\'s company']
 
         jobs = jobs[~(
             jobs['title'].str.contains('|'.join(filter_title), case=False, na=False) |
