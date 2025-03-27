@@ -1,5 +1,7 @@
 # Job Matching System
 
+https://github.com/user-attachments/assets/10cd5963-bf1a-41c5-a177-ec0f52054d65
+
 ## Overview
 
 The Job Matching System is a Python-based application that helps users find eligible jobs based on their resume. The system uses BERT embeddings for semantic matching and cosine similarity to compare the resume with job descriptions. It also filters out jobs based on specific criteria (e.g., excluding jobs with certain keywords or invalid locations).
